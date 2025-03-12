@@ -1,57 +1,65 @@
-import React, { useState, useEffect } from 'react'
-import { Cloudinary } from '@cloudinary/url-gen'
-import { AdvancedImage } from '@cloudinary/react'
+import React, { useState, useEffect } from 'react';
+import { Cloudinary } from '@cloudinary/url-gen';
+import { AdvancedImage } from '@cloudinary/react';
+import PhotoPopUp from './PhotoPopUp';
 
 function GalleryView() {
-  const [photos, setPhotos] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [photos, setPhotos] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showPopUp, setShowPopUp] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
 
   // Cloudinary instance
   const cld = new Cloudinary({
     cloud: { cloudName: 'dqzcozav8' },
-  })
+  });
 
   useEffect(() => {
-    fetchPhotos()
-  }, [])
+    fetchPhotos();
+  }, []);
 
   const fetchPhotos = async () => {
-    setLoading(true)
-    setError('')
+    setLoading(true);
+    setError('');
 
     try {
-      const response = await fetch('http://localhost:3004/api/photos')
-      if (!response.ok) throw new Error('Failed to fetch photos')
+      const response = await fetch('http://localhost:3004/api/photos');
+      if (!response.ok) throw new Error('Failed to fetch photos');
 
-      const data = await response.json()
-      setPhotos(data.resources)
+      const data = await response.json();
+      setPhotos(data.resources);
     } catch (error) {
-      setError(error.message)
+      setError(error.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div>
       <h2>Photo Gallery</h2>
       {loading && <p>Loading...</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
-      <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+      <div className='flex flex-wrap gap-3'>
         {photos.map((photo) => {
-          const img = cld.image(photo.public_id)
+          // Create Cloudinary image instance for each photo
+          const img = cld.image(photo.public_id).format('jpg');
+
           return (
-            <AdvancedImage
-              key={photo.public_id}
-              cldImg={img}
-              style={{ width: '200px', margin: '10px' }}
-            />
-          )
+            <div key={photo.public_id} onClick={() => {
+              setSelectedPhoto(img);
+              setShowPopUp(true);
+            }}>
+              <AdvancedImage cldImg={img} className="w-32 h-32 object-cover rounded-md cursor-pointer" />
+            </div>
+          );
         })}
       </div>
+
+      {showPopUp && <PhotoPopUp setShowPopUp={setShowPopUp} photo={selectedPhoto} />}
     </div>
-  )
+  );
 }
 
-export default GalleryView
+export default GalleryView;
